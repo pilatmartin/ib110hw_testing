@@ -1,9 +1,9 @@
-from random import randint, choice, sample
+from random import choices, randint, choice, sample
 from typing import Set, List
 from ib110hw.automaton.dfa import DFA
 from ib110hw.automaton.nfa import NFA
-from utils.transformation import (
-    automaton_to_graphviz,
+from ib110hw.automaton.utils import automaton_to_graphviz
+from transformation import (
     remove_unreachable_states,
     minimize,
     canonize,
@@ -16,8 +16,6 @@ def r_states(min_states: int, max_states: int) -> List[str]:
 
 
 def r_dfa(
-    min_deg: int,
-    max_deg: int,
     min_states: int,
     max_states: int,
     min_fin_states: int,
@@ -30,9 +28,8 @@ def r_dfa(
         Pick an initial state from the generated set of states.
 
         For each state (starting with the initial state):
-            Generate degree (between min_deg and max_deg)
-            Generate set of next states (the amount depends on the generated degree)
-            For every next state, pick a transition symbol
+            Generate set of next states
+            For every next state, pick a transition symbol(s)
 
     Args:
         min_deg: The minimum degree of each state.
@@ -44,24 +41,18 @@ def r_dfa(
         alphabet: Alphabet used by the automaton. (Not every symbol may be used)
 
     Returns:
-        Random DFA. (Can be disjointed)
+        Random DFA.
     """
-    assert min_deg <= max_deg
     assert min_states <= max_states
     assert min_fin_states <= max_fin_states
 
-    def add_next_states(_min_deg: int, _state: str) -> None:
-        s_deg = randint(_min_deg, max_deg)
-        next_states = sample(states, k=min(s_deg, len(states)))
-        symbols = sample(list(alphabet), k=s_deg)
+    def add_next_states(_state: str) -> None:
+        next_states = choices(states, k=len(alphabet))
 
-        for next_s, symbol in zip(next_states, symbols):
+        for next_s, symbol in zip(next_states, alphabet):
             result.add_transition(_state, next_s, symbol)
 
     # state degree cannot be bigger than the size of DFA automatons alphabet
-    max_deg = min(len(alphabet), max_deg)
-    min_deg = min(min_deg, max_deg)
-
     states = r_states(min_states, max_states)
 
     result = DFA(
@@ -76,13 +67,13 @@ def r_dfa(
                 ),
             )
         ),
-        {state: {symbol: state for symbol in alphabet} for state in states},
+        {},
     )
 
-    add_next_states(1, result.initial_state)
+    add_next_states(result.initial_state)
 
     for state in result.states.difference([result.initial_state]):
-        add_next_states(min_deg, state)
+        add_next_states(state)
 
     return result
 
@@ -120,7 +111,7 @@ def r_nfa(
     """
 
     def add_next_states(_min_deg: int, _max_deg: int, _state: str) -> None:
-        s_deg = randint(_min_deg, max_deg)
+        s_deg = randint(_min_deg, _max_deg)
         next_states = sample(states, k=min(s_deg, len(states)))
 
         for next_state in next_states:
@@ -151,36 +142,36 @@ def r_nfa(
 
 
 if __name__ == "__main__":
-    r_dfa_automaton = r_dfa(
-        min_deg=2,
-        max_deg=3,
-        min_states=3,
-        max_states=8,
-        min_fin_states=1,
-        max_fin_states=3,
-        alphabet={"a", "b", "c", "d"},
-    )
-    print(r_dfa_automaton)
-    r_dfa_reachable = remove_unreachable_states(r_dfa_automaton)
-    print(r_dfa_reachable)
+    # r_dfa_automaton = r_dfa(
+    #     min_deg=2,
+    #     max_deg=3,
+    #     min_states=3,
+    #     max_states=8,
+    #     min_fin_states=1,
+    #     max_fin_states=3,
+    #     alphabet={"a", "b", "c", "d"},
+    # )
+    # print(r_dfa_automaton)
+    # r_dfa_reachable = remove_unreachable_states(r_dfa_automaton)
+    # print(r_dfa_reachable)
 
-    print(r_dfa_min := minimize(r_dfa_reachable))
-    print(r_dfa_can := canonize(r_dfa_min))
+    # print(r_dfa_min := minimize(r_dfa_reachable))
+    # print(r_dfa_can := canonize(r_dfa_min))
 
-    r_nfa_automaton = r_nfa(
-        min_deg=2,
-        max_deg=4,
-        min_states=10,
-        max_states=20,
-        min_fin_states=5,
-        max_fin_states=10,
-        alphabet={"a", "b", "c", "d"},
-    )
-    print(r_nfa_automaton)
-    r_nfa_reachable = remove_unreachable_states(r_nfa_automaton)
-    print(r_nfa_reachable)
+    # r_nfa_automaton = r_nfa(
+    #     min_deg=2,
+    #     max_deg=4,
+    #     min_states=10,
+    #     max_states=20,
+    #     min_fin_states=5,
+    #     max_fin_states=10,
+    #     alphabet={"a", "b", "c", "d"},
+    # )
+    # print(r_nfa_automaton)
+    # r_nfa_reachable = remove_unreachable_states(r_nfa_automaton)
+    # print(r_nfa_reachable)
 
-    r_nfa_determinized = determinize(r_nfa_automaton)
+    # r_nfa_determinized = determinize(r_nfa_automaton)
 
     # r_name = f"r_dfa_{randint(0, 10 ** 10)}"
     # automaton_to_graphviz(r_dfa_automaton, f"C:\\Skola\\SBAPR\\r_automatons\\r_dfa\\{r_name}.dot")
@@ -188,16 +179,16 @@ if __name__ == "__main__":
     # automaton_to_graphviz(r_dfa_min, f"C:\\Skola\\SBAPR\\r_automatons\\r_dfa\\{r_name}_min.dot")
     # automaton_to_graphviz(r_dfa_can, f"C:\\Skola\\SBAPR\\r_automatons\\r_dfa\\{r_name}_can.dot")
     #
-    r_name = f"r_nfa_{randint(0, 10 ** 10)}"
-    automaton_to_graphviz(
-        r_nfa_automaton, f"C:\\Skola\\SBAPR\\r_automatons\\r_nfa\\{r_name}.dot"
-    )
-    automaton_to_graphviz(
-        r_nfa_reachable, f"C:\\Skola\\SBAPR\\r_automatons\\r_nfa\\{r_name}_reach.dot"
-    )
-    automaton_to_graphviz(
-        r_nfa_determinized, f"C:\\Skola\\SBAPR\\r_automatons\\r_nfa\\{r_name}_det.dot"
-    )
+    # r_name = f"r_nfa_{randint(0, 10 ** 10)}"
+    # automaton_to_graphviz(
+    #     r_nfa_automaton, f"C:\\Skola\\SBAPR\\r_automatons\\r_nfa\\{r_name}.dot"
+    # )
+    # automaton_to_graphviz(
+    #     r_nfa_reachable, f"C:\\Skola\\SBAPR\\r_automatons\\r_nfa\\{r_name}_reach.dot"
+    # )
+    # automaton_to_graphviz(
+    #     r_nfa_determinized, f"C:\\Skola\\SBAPR\\r_automatons\\r_nfa\\{r_name}_det.dot"
+    # )
 
     # to_minimize_t = {
     #     "A": {
@@ -351,3 +342,8 @@ if __name__ == "__main__":
     #
     # automaton_to_graphviz(to_minimize_a4, f"C:\\Skola\\SBAPR\\r_automatons\\r_dfa\\to_minimize_a4.dot")
     # automaton_to_graphviz(minimize(to_minimize_a4), f"C:\\Skola\\SBAPR\\r_automatons\\r_dfa\\minimized_a4.dot")
+
+    r_automaton_dfa = r_dfa(2, 5, 1, 2, {"a", "b", "c"})
+    r_automaton_nfa = r_nfa(1, 5, 2, 5, 1, 2, {"a", "b", "c"})
+    automaton_to_graphviz(r_automaton_dfa, "./r_dfa.dot")
+    automaton_to_graphviz(r_automaton_nfa, "./r_nfa.dot")
