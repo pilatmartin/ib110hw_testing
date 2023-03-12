@@ -52,7 +52,6 @@ def r_dfa(
         for next_s, symbol in zip(next_states, alphabet):
             result.add_transition(_state, next_s, symbol)
 
-    # state degree cannot be bigger than the size of DFA automatons alphabet
     states = r_states(min_states, max_states)
 
     result = DFA(
@@ -75,6 +74,7 @@ def r_dfa(
     for state in result.states.difference([result.initial_state]):
         add_next_states(state)
 
+    automaton_to_graphviz(result, "./r_dfa.dot")
     return result
 
 

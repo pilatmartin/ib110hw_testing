@@ -49,8 +49,6 @@ def determinize(automaton: NFA) -> DFA:
             det_transitions[str_state][key] = "".join(sorted(new_state))
             states.append(new_state)
 
-    print(det_transitions)
-
     return DFA(
         states=det_states,
         alphabet=automaton.alphabet,
@@ -66,7 +64,7 @@ def remove_empty_transitions(automaton: NFA) -> NFA:
     Input automaton is not altered.
 
     Args:
-        automaton (NFA): Automaton to be updated
+        automaton (NFA): Automaton
 
     Returns:
         NFA: Equivalent automaton without ε transitions.
@@ -74,7 +72,7 @@ def remove_empty_transitions(automaton: NFA) -> NFA:
 
     result: NFA = NFA(
         {*automaton.states},
-        automaton.alphabet.difference({""}),
+        automaton.alphabet - {""},
         automaton.initial_state,
         {*automaton.final_states},
         {},
@@ -118,7 +116,7 @@ def remove_unreachable_states(automaton: Union[DFA, NFA]) -> Union[NFA, DFA]:
     Input automaton is not altered.
 
     Args:
-        automaton (Union[DFA, NFA]):
+        automaton (Union[DFA, NFA]): Automaton
 
     Returns:
         Equal automaton without unreachable states.
@@ -132,32 +130,32 @@ def remove_unreachable_states(automaton: Union[DFA, NFA]) -> Union[NFA, DFA]:
     while queue:
         state = queue.popleft()
 
-        if isinstance(automaton, NFA):
-            next_s = set()
+        if isinstance(automaton, DFA):
+            next_state = set()
             for symbol in automaton.alphabet:
-                next_s.update(automaton.get_transition(state, symbol))
+                next_state.update(automaton.get_transition(state, symbol))
         else:
-            next_s = {
+            next_state = {
                 automaton.get_transition(state, symbol) for symbol in automaton.alphabet
             }
 
-        queue.extend(next_s.difference(reachable))
-        reachable.update(next_s)
+        queue.extend(next_state - reachable)
+        reachable.update(next_state)
 
-    for state in list(automaton.states.difference(reachable)):
+    for state in list(automaton.states - reachable):
         result.remove_state(state)
 
     return result
 
 
 # consider refactor/rewrite
-def minimize(automaton: DFA) -> DFA:
+def minimize(automaton: Union[DFA, NFA]) -> DFA:
     """
     Returns a minimized version of the provided automaton.
     Input automaton is not altered.
 
     Args:
-        automaton (FA): Automaton to be minimized
+        automaton (Union[DFA, NFA]): Automaton to be minimized
 
     Returns:
         DFA: Minimized version of the provided automaton.
@@ -165,8 +163,7 @@ def minimize(automaton: DFA) -> DFA:
 
     def get_groups(_transitions: DFATransitions) -> List[Set[str]]:
         """
-        Divides states into equivalence groups based on the current
-        transitions state
+        Divides states into equivalence groups.
         """
         new_groups = {}
 
@@ -195,19 +192,19 @@ def minimize(automaton: DFA) -> DFA:
         return [new_groups[key] for key in sorted(new_groups.keys())]
 
     minimized_transitions: DFATransitions = {}
-    det_automaton: DFA = determinize(remove_unreachable_states(automaton))
+    reachable_automaton: DFA = remove_unreachable_states(determinize(automaton))
 
     result: DFA = DFA(
-        det_automaton.states,
-        det_automaton.alphabet,
-        det_automaton.initial_state,
+        reachable_automaton.states,
+        reachable_automaton.alphabet,
+        reachable_automaton.initial_state,
         set(),
         minimized_transitions,
     )
 
     groups: List[Set[str]] = [
-        det_automaton.final_states,
-        det_automaton.states.difference(det_automaton.final_states),
+        reachable_automaton.final_states,
+        reachable_automaton.states.difference(reachable_automaton.final_states),
     ]
 
     while True:
@@ -215,10 +212,10 @@ def minimize(automaton: DFA) -> DFA:
         # break when nothing changes
         marked_transitions = {}
 
-        for state in det_automaton.transitions:
-            for symbol in sorted(det_automaton.alphabet):
+        for state in reachable_automaton.transitions:
+            for symbol in sorted(reachable_automaton.alphabet):
                 for index, group in enumerate(groups):
-                    if det_automaton.get_transition(state, symbol) not in group:
+                    if reachable_automaton.get_transition(state, symbol) not in group:
                         continue
 
                     if state not in marked_transitions.keys():
@@ -235,10 +232,10 @@ def minimize(automaton: DFA) -> DFA:
     result.states = {f"{i}" for i in range(len(groups))}
 
     for index in range(len(groups)):
-        if groups[index].intersection(det_automaton.final_states):
+        if groups[index].intersection(reachable_automaton.final_states):
             result.final_states.add(f"{index}")
 
-        if det_automaton.initial_state in groups[index]:
+        if reachable_automaton.initial_state in groups[index]:
             result.initial_state = f"{index}"
 
         minimized_transitions[f"{index}"] = marked_transitions[groups[index].pop()]
@@ -304,6 +301,16 @@ def canonize(automaton: DFA) -> DFA:
 
 
 def compare_automatons(a1: Union[NFA, DFA], a2: Union[NFA, DFA]) -> bool:
+    """
+    Compares the two automatons by transforming them into theirs canonical form.
+
+    Args:
+        a1 (Union[NFA, DFA]): Automaton to be compared.
+        a2 (Union[NFA, DFA]): Automaton to be compared.
+
+    Returns:
+        bool: True if the provided automata are equals. False otheriwse.
+    """
     if isinstance(a1, NFA):
         a1 = determinize(a1)
 
