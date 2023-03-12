@@ -138,7 +138,7 @@ def string_from_regex(
     max_amount: int = 10,
     max_str_len: int = 5,
 ) -> Set[str]:
-    amount = min(draw(integers(min_value=min_amount, max_value=max_amount)))
+    amount = draw(integers(min_value=min_amount, max_value=max_amount))
     generator = islice(generate(regex, limit=max_str_len), amount)
 
     return set(generator)
