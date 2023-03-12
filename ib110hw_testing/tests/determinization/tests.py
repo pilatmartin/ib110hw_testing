@@ -1,11 +1,12 @@
 import unittest
 import sys
+from test_cases import *
 
-sys.path.append("../..")
+sys.path.append("..")
+from constants import *
 
-from ib110hw_testing.utils.transformation import determinize, canonize
-from ib110hw_testing.tests.determinization.test_cases import *
-from ib110hw_testing.tests.constants import *
+sys.path.append("../../src/ib110hw_testing")
+from transformation.transformation import determinize, canonize
 
 
 class TestDeterminization(unittest.TestCase):

@@ -128,13 +128,20 @@ def nfas(
 
     return automaton
 
+
 @composite
-def string_from_regex(draw: DrawFn
-    regex: str, max_amount: int = 10, max_str_len: int = 5
+def string_from_regex(
+    draw: DrawFn,
+    regex: str,
+    min_amount: int = 5,
+    max_amount: int = 10,
+    max_str_len: int = 5,
 ) -> Set[str]:
     generator = generate(regex, limit=max_str_len)
-    return {next(generator) for _ in range(max_amount)}
+    amount = draw(integers(min_value=min_amount, max_value=max_amount))
+
+    return {next(generator) for _ in range(amount)}
 
 
 if __name__ == "__main__":
-    print(string_from_regex("(a|b)*c"))
+    pass

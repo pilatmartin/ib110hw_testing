@@ -1,6 +1,6 @@
 from copy import deepcopy
 from typing import Union, Set, Deque, Dict, List
-from ib110hw.automaton.nfa import NFA, NFATransitions
+from ib110hw.automaton.nfa import NFA
 from ib110hw.automaton.dfa import DFA, DFATransitions
 from collections import deque
 
@@ -148,7 +148,6 @@ def remove_unreachable_states(automaton: Union[DFA, NFA]) -> Union[NFA, DFA]:
     return result
 
 
-# consider refactor/rewrite
 def minimize(automaton: Union[DFA, NFA]) -> DFA:
     """
     Returns a minimized version of the provided automaton.
@@ -178,10 +177,7 @@ def minimize(automaton: Union[DFA, NFA]) -> DFA:
                     continue
 
                 for _symbol in automaton.alphabet:
-                    if _symbol not in _transitions[_state].keys():
-                        continue
-
-                    if transition := _transitions[_state][_symbol]:
+                    if transition := _transitions.get(_state, {}).get(_symbol, None):
                         group_key += transition
 
                 if group_key not in new_groups.keys():
@@ -191,8 +187,11 @@ def minimize(automaton: Union[DFA, NFA]) -> DFA:
 
         return [new_groups[key] for key in sorted(new_groups.keys())]
 
+    if isinstance(automaton, NFA):
+        automaton = determinize(automaton)
+
     minimized_transitions: DFATransitions = {}
-    reachable_automaton: DFA = remove_unreachable_states(determinize(automaton))
+    reachable_automaton: DFA = remove_unreachable_states(automaton)
 
     result: DFA = DFA(
         reachable_automaton.states,
@@ -204,7 +203,7 @@ def minimize(automaton: Union[DFA, NFA]) -> DFA:
 
     groups: List[Set[str]] = [
         reachable_automaton.final_states,
-        reachable_automaton.states.difference(reachable_automaton.final_states),
+        reachable_automaton.states - reachable_automaton.final_states,
     ]
 
     while True:
