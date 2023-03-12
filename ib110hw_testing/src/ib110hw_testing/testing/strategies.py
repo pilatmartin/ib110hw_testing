@@ -2,6 +2,7 @@ from exrex import generate, getone
 from hypothesis.strategies import integers, composite, DrawFn, lists, sampled_from
 from ib110hw.automaton.dfa import DFA
 from ib110hw.automaton.nfa import NFA
+from itertools import islice
 from typing import Set
 
 
@@ -137,10 +138,10 @@ def string_from_regex(
     max_amount: int = 10,
     max_str_len: int = 5,
 ) -> Set[str]:
-    generator = generate(regex, limit=max_str_len)
-    amount = draw(integers(min_value=min_amount, max_value=max_amount))
+    amount = min(draw(integers(min_value=min_amount, max_value=max_amount)))
+    generator = islice(generate(regex, limit=max_str_len), amount)
 
-    return {next(generator) for _ in range(amount)}
+    return set(generator)
 
 
 if __name__ == "__main__":
