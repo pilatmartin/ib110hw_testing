@@ -1,4 +1,4 @@
-from exrex import generate, getone
+from exrex import generate
 from hypothesis.strategies import integers, composite, DrawFn, lists, sampled_from
 from ib110hw.automaton.dfa import DFA
 from ib110hw.automaton.nfa import NFA
@@ -60,7 +60,15 @@ def dfas(
         set(automaton_states),
         alphabet,
         draw(sampled_from(automaton_states)),
-        set(draw(lists(sampled_from(automaton_states), min_fin_size, max_fin_size))),
+        set(
+            draw(
+                lists(
+                    sampled_from(automaton_states),
+                    min_size=min_fin_size,
+                    max_size=max_fin_size,
+                )
+            )
+        ),
         {},
     )
 
@@ -115,7 +123,15 @@ def nfas(
         set(states),
         alphabet,
         draw(sampled_from(states)),
-        set(draw(lists(sampled_from(automaton_states), min_fin_size, max_fin_size))),
+        set(
+            draw(
+                lists(
+                    sampled_from(automaton_states),
+                    min_size=min_fin_size,
+                    max_size=max_fin_size,
+                )
+            )
+        ),
         {},
     )
 
@@ -131,13 +147,22 @@ def nfas(
 
 
 @composite
-def string_from_regex(
+def strings_from_regex(
     draw: DrawFn,
     regex: str,
     min_amount: int = 5,
     max_amount: int = 10,
     max_str_len: int = 5,
-) -> Set[str]:
+):
+    """
+    Composite strategy to generate strings based on the provided regular expression.
+
+    Args:
+        regex (str): Regular expression used to generate strings.
+        min_amount (int, optional): Min amount of strings to be generated. Defaults to 5.
+        max_amount (int, optional): Max amount of strings to be generated. Defaults to 10.
+        max_str_len (int, optional): Max length of individual generated strings. Defaults to 5.
+    """
     amount = draw(integers(min_value=min_amount, max_value=max_amount))
     generator = islice(generate(regex, limit=max_str_len), amount)
 

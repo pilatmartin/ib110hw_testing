@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ib110hw-testing"
-version = "0.1.6"
+version = "0.1.7"
 description = "Package used for testing homework assignments in the IB110 course at FI MUNI."
 authors = ["Martin Pilát <8pilatmartin8@gmail.com>"]
 readme = "README.md"
