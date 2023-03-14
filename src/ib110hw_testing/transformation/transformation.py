@@ -133,7 +133,7 @@ def remove_unreachable_states(automaton: Union[DFA, NFA]) -> Union[NFA, DFA]:
         if isinstance(automaton, DFA):
             next_state = set()
             for symbol in automaton.alphabet:
-                next_state.update(automaton.get_transition(state, symbol))
+                next_state.update({automaton.get_transition(state, symbol)})
         else:
             next_state = {
                 automaton.get_transition(state, symbol) for symbol in automaton.alphabet
@@ -194,16 +194,16 @@ def minimize(automaton: Union[DFA, NFA]) -> DFA:
     reachable_automaton: DFA = remove_unreachable_states(automaton)
 
     result: DFA = DFA(
-        reachable_automaton.states,
-        reachable_automaton.alphabet,
+        {*reachable_automaton.states},
+        {*reachable_automaton.alphabet},
         reachable_automaton.initial_state,
         set(),
         minimized_transitions,
     )
 
     groups: List[Set[str]] = [
-        reachable_automaton.final_states,
-        reachable_automaton.states - reachable_automaton.final_states,
+        {*reachable_automaton.final_states},
+        reachable_automaton.states.difference(reachable_automaton.final_states),
     ]
 
     while True:
@@ -217,7 +217,7 @@ def minimize(automaton: Union[DFA, NFA]) -> DFA:
                     if reachable_automaton.get_transition(state, symbol) not in group:
                         continue
 
-                    if state not in marked_transitions.keys():
+                    if state not in marked_transitions:
                         marked_transitions[state] = {}
 
                     marked_transitions[state][symbol] = f"{index}"
@@ -253,6 +253,11 @@ def canonize(automaton: DFA) -> DFA:
     Returns:
         Canonical form of the provided automaton.
     """
+    def append_next():
+        next_state = next((s for s in automaton.transitions if s not in renamed), None)
+        if next_state:
+            states.append(next_state)
+
     renamed = {}
     states = deque()
     states.append(automaton.initial_state)
@@ -266,7 +271,11 @@ def canonize(automaton: DFA) -> DFA:
         current_state = states.popleft()
 
         if renamed.get(current_state, None):
-            continue
+            if states:
+                continue
+            if len(renamed) < len(automaton.states):
+                append_next()
+                continue
 
         renamed[current_state] = f"{rank}"
 
@@ -279,14 +288,16 @@ def canonize(automaton: DFA) -> DFA:
             states.append(next_state)
 
         rank += 1
+        if not states:
+            append_next()
 
     renamed_transitions = {
         renamed[state]: deepcopy(automaton.transitions[state])
-        for state in automaton.transitions.keys()
+        for state in automaton.states
     }
 
     for state, value in renamed_transitions.items():
-        for symbol in value.keys():
+        for symbol in value:
             prev = renamed_transitions[state][symbol]
             renamed_transitions[state][symbol] = renamed[prev]
 
