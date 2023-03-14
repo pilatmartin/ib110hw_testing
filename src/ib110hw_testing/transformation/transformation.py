@@ -41,7 +41,7 @@ def determinize(automaton: NFA) -> DFA:
         for key in automaton.alphabet:
             new_state = set()
             for s in state:
-                new_state = new_state | automaton.get_transition(s, key)
+                new_state = new_state.union(automaton.get_transition(s, key))
 
             if not new_state:
                 new_state = {"sink"}
@@ -51,8 +51,8 @@ def determinize(automaton: NFA) -> DFA:
 
     return DFA(
         states=det_states,
-        alphabet=automaton.alphabet,
-        final_states=det_final_states,
+        alphabet={*automaton.alphabet},
+        final_states={*det_final_states},
         initial_state=automaton.initial_state,
         transitions=det_transitions,
     )
@@ -72,7 +72,7 @@ def remove_empty_transitions(automaton: NFA) -> NFA:
 
     result: NFA = NFA(
         {*automaton.states},
-        automaton.alphabet - {""},
+        automaton.alphabet.difference({""}),
         automaton.initial_state,
         {*automaton.final_states},
         {},
@@ -86,10 +86,10 @@ def remove_empty_transitions(automaton: NFA) -> NFA:
 
     # next1
     for state in automaton.states:
-        next1[state] = {state} | automaton.get_transition(state, "")
+        next1[state] = {state}.union(automaton.get_transition(state, ""))
 
         for next_state in automaton.get_transition(state, ""):
-            next1[state] = next1[state] | next1.get(next_state, set())
+            next1[state] = next1[state].union(next1.get(next_state, set()))
 
     # next2
     for state in next1:
@@ -310,7 +310,7 @@ def canonize(automaton: DFA) -> DFA:
     )
 
 
-def compare_automatons(a1: Union[NFA, DFA], a2: Union[NFA, DFA]) -> bool:
+def compare_automata(a1: Union[NFA, DFA], a2: Union[NFA, DFA]) -> bool:
     """
     Compares the two automatons by transforming them into theirs canonical form.
 
