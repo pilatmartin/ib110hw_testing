@@ -95,9 +95,8 @@ def remove_empty_transitions(automaton: NFA) -> NFA:
     for state in next1:
         for symbol in result.alphabet:
             for next_state in next1[state]:
-                result.add_transition(
-                    state, automaton.get_transition(next_state, symbol), symbol
-                )
+                for s in automaton.get_transition(next_state, symbol):
+                    result.add_transition(state, s, symbol)
 
     # next3
     for state in result.transitions:
@@ -105,7 +104,8 @@ def remove_empty_transitions(automaton: NFA) -> NFA:
             next2_transition = {*result.get_transition(state, symbol)}
 
             for next_state in next2_transition:
-                result.add_transition(state, next1.get(next_state, set()), symbol)
+                for s in next1.get(next_state, set()):
+                    result.add_transition(state, s, symbol)
 
     return result
 
@@ -168,7 +168,6 @@ def minimize(automaton: Union[DFA, NFA]) -> DFA:
 
         for g_index, _group in enumerate(groups):
             for _state in sorted(_group):
-
                 # group key is prefixed with index
                 # to distinguish the same transitions from different groups
                 group_key = f"{g_index}_"
@@ -177,7 +176,8 @@ def minimize(automaton: Union[DFA, NFA]) -> DFA:
                     continue
 
                 for _symbol in automaton.alphabet:
-                    if transition := _transitions.get(_state, {}).get(_symbol, None):
+                    transition = _transitions.get(_state, {}).get(_symbol, None)
+                    if transition:
                         group_key += transition
 
                 if group_key not in new_groups.keys():
@@ -253,6 +253,7 @@ def canonize(automaton: DFA) -> DFA:
     Returns:
         Canonical form of the provided automaton.
     """
+
     def append_next():
         next_state = next((s for s in automaton.transitions if s not in renamed), None)
         if next_state:
@@ -270,7 +271,7 @@ def canonize(automaton: DFA) -> DFA:
     while states:
         current_state = states.popleft()
 
-        if renamed.get(current_state, None):
+        if renamed.get(current_state):
             if states:
                 continue
             if len(renamed) < len(automaton.states):
@@ -282,7 +283,7 @@ def canonize(automaton: DFA) -> DFA:
         for symbol in sorted(automaton.alphabet):
             next_state = automaton.get_transition(current_state, symbol)
 
-            if renamed.get(next_state, None):
+            if renamed.get(next_state):
                 continue
 
             states.append(next_state)
