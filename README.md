@@ -2,9 +2,9 @@ This library was created for the course **IB110 - Introduction to Informatics** 
 
 # Setup
 The library can be installed using `pip` like so:
-```pip install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple ib110hw_testing```
+```pip install ib110hw_testing```
 
-It needs to be installed this way due to the fact that it is located on the [testing instance of PyPI](https://test.pypi.org/project/ib110hw-testing/) and the needed dependencies are located on the [main instance of PyPI](https://pypi.org/).
+I recommend using venv to install the library as it has some dependencies.
 
 # Modules
 ## Testing

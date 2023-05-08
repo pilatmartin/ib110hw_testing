@@ -190,20 +190,20 @@ def minimize(automaton: Union[DFA, NFA]) -> DFA:
     if isinstance(automaton, NFA):
         automaton = determinize(automaton)
 
+    automaton: DFA = remove_unreachable_states(automaton)
     minimized_transitions: DFATransitions = {}
-    reachable_automaton: DFA = remove_unreachable_states(automaton)
 
     result: DFA = DFA(
-        {*reachable_automaton.states},
-        {*reachable_automaton.alphabet},
-        reachable_automaton.initial_state,
+        {*automaton.states},
+        {*automaton.alphabet},
+        automaton.initial_state,
         set(),
         minimized_transitions,
     )
 
     groups: List[Set[str]] = [
-        {*reachable_automaton.final_states},
-        reachable_automaton.states.difference(reachable_automaton.final_states),
+        {*automaton.final_states},
+        automaton.states.difference(automaton.final_states),
     ]
 
     while True:
@@ -211,10 +211,10 @@ def minimize(automaton: Union[DFA, NFA]) -> DFA:
         # break when nothing changes
         marked_transitions = {}
 
-        for state in reachable_automaton.transitions:
-            for symbol in sorted(reachable_automaton.alphabet):
+        for state in automaton.transitions:
+            for symbol in sorted(automaton.alphabet):
                 for index, group in enumerate(groups):
-                    if reachable_automaton.get_transition(state, symbol) not in group:
+                    if automaton.get_transition(state, symbol) not in group:
                         continue
 
                     if state not in marked_transitions:
@@ -231,10 +231,10 @@ def minimize(automaton: Union[DFA, NFA]) -> DFA:
     result.states = {f"{i}" for i in range(len(groups))}
 
     for index in range(len(groups)):
-        if groups[index].intersection(reachable_automaton.final_states):
+        if groups[index].intersection(automaton.final_states):
             result.final_states.add(f"{index}")
 
-        if reachable_automaton.initial_state in groups[index]:
+        if automaton.initial_state in groups[index]:
             result.initial_state = f"{index}"
 
         minimized_transitions[f"{index}"] = marked_transitions[groups[index].pop()]
@@ -248,7 +248,7 @@ def canonize(automaton: DFA) -> DFA:
     Input automaton is not altered.
 
     Args:
-        automaton (DFA): Automaton to be canonized
+        automaton (DFA): Automaton to be transformed.
 
     Returns:
         Canonical form of the provided automaton.
@@ -313,14 +313,14 @@ def canonize(automaton: DFA) -> DFA:
 
 def compare_automata(a1: Union[NFA, DFA], a2: Union[NFA, DFA]) -> bool:
     """
-    Compares the two automatons by transforming them into theirs canonical form.
+    Compares the two automata by transforming them into their canonical form.
 
     Args:
         a1 (Union[NFA, DFA]): Automaton to be compared.
         a2 (Union[NFA, DFA]): Automaton to be compared.
 
     Returns:
-        bool: True if the provided automata are equals. False otheriwse.
+        bool: True if the provided automata are equivalent. False otheriwse.
     """
     if isinstance(a1, NFA):
         a1 = determinize(a1)
